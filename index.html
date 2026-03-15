@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>⚡ EV Charging Hub</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Leaflet CSS for Maps -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Leaflet Routing Machine CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css" />
+    <!-- Leaflet Control Geocoder CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Top Navigation -->
+        <header class="top-nav">
+            <div class="nav-brand">
+                <h2>⚡ EV Hub</h2>
+            </div>
+            <ul class="nav-links">
+                <li><a href="#" class="active" data-target="dashboard"><i class="fa-solid fa-house"></i><span>Dashboard</span></a></li>
+                <li><a href="#" data-target="locator"><i class="fa-solid fa-location-dot"></i><span>Locator</span></a></li>
+                <li><a href="#" data-target="timer"><i class="fa-solid fa-stopwatch"></i><span>Timers</span></a></li>
+                <li><a href="#" data-target="reservation"><i class="fa-solid fa-calendar-check"></i><span>Reserve</span></a></li>
+                <li><a href="#" data-target="reviews"><i class="fa-solid fa-star"></i><span>Reviews</span></a></li>
+                <li><a href="#" data-target="autocharge"><i class="fa-solid fa-bolt"></i><span>RFID</span></a></li>
+                <li><a href="#" data-target="trip"><i class="fa-solid fa-map"></i><span>Routing</span></a></li>
+                <li><a href="#" data-target="lead"><i class="fa-solid fa-bullhorn"></i><span>Leads</span></a></li>
+                <li><a href="#" data-target="weather"><i class="fa-solid fa-cloud-bolt"></i><span>Weather</span></a></li>
+            </ul>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            
+            <!-- Dashboard View -->
+            <section id="dashboard" class="page-view active-view">
+                <header class="page-header">
+                    <h1>Welcome to your unified EV ecosystem.</h1>
+                    <p>Manage everything from charging spots to trip planning.</p>
+                </header>
+                
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <h4>Active Chargers</h4>
+                        <div class="metric-value" id="active-chargers-metric">Live Data</div>
+                    </div>
+                    <div class="metric-card">
+                        <h4>Stations Online</h4>
+                        <div class="metric-value">98%</div>
+                    </div>
+                    <div class="metric-card">
+                        <h4>Avg Wait Time</h4>
+                        <div class="metric-value">4 min</div>
+                    </div>
+                    <div class="metric-card">
+                        <h4>Total Energy (kWh)</h4>
+                        <div class="metric-value">845k</div>
+                    </div>
+                </div>
+
+                <div class="dashboard-info">
+                    <h3>Get Started</h3>
+                    <p>Select a feature from the top navigation to test out the application. The Station Locator is now powered by real-time Open Charge Map data.</p>
+                </div>
+            </section>
+
+            <!-- Station Locator View (Live API) -->
+            <section id="locator" class="page-view">
+                <header class="page-header">
+                    <h1>📍 Live Charging Station Locator</h1>
+                    <p>Discover real-time, global chargers pulled directly from the Open Charge Map API.</p>
+                </header>
+                <div class="map-controls">
+                    <button id="search-area-btn" class="btn primary-btn"><i class="fa-solid fa-magnifying-glass"></i> Refresh Area</button>
+                    <span id="api-status" class="status-msg">Loading Map...</span>
+                </div>
+                <div id="map" class="map-container"></div>
+                <div class="legend">
+                    <p><span class="dot green"></span> Fast Charger (Level 3)</p>
+                    <p><span class="dot blue"></span> Standard Charger (Level 2)</p>
+                    <p><span class="dot red"></span> Unknown/Error</p>
+                </div>
+            </section>
+
+            <!-- Wait Timer View -->
+            <section id="timer" class="page-view">
+                <header class="page-header">
+                    <h1>⏱️ Live Wait Timer</h1>
+                    <p>Check exactly how many minutes you'll have to wait before a connector becomes available.</p>
+                    <button id="refresh-timers" class="btn primary-btn"><i class="fa-solid fa-rotate-right"></i> Refresh Live Data</button>
+                </header>
+                <div class="timer-grid" id="timer-container">
+                    <!-- Populated by JS -->
+                </div>
+            </section>
+
+            <!-- Slot Reservation View -->
+            <section id="reservation" class="page-view">
+                <header class="page-header">
+                    <h1>📅 Slot Reservation</h1>
+                    <p>Book a time slot in advance to secure a charge spot and bypass the queues.</p>
+                </header>
+                <div class="form-card">
+                    <h3>Make a Booking</h3>
+                    <form id="reservation-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Select Station</label>
+                                <select required>
+                                    <option>Downtown Plaza</option>
+                                    <option>Highway Stop 42</option>
+                                    <option>Mall Parking East</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Date</label>
+                                <input type="date" required>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Connector Type</label>
+                                <select required>
+                                    <option>CCS2 (Fast Charge)</option>
+                                    <option>CHAdeMO</option>
+                                    <option>Type 2 (AC)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Time Slot</label>
+                                <input type="time" required>
+                            </div>
+                        </div>
+                        <div class="form-group slider-group">
+                            <label>Duration: <span id="duration-val">30</span> min</label>
+                            <input type="range" min="15" max="120" step="15" value="30" id="duration-slider">
+                        </div>
+                        <button type="submit" class="btn primary-btn full-width">Book Slot</button>
+                    </form>
+                    <div id="reservation-success" class="alert success hidden">✅ Slot successfully reserved!</div>
+                </div>
+            </section>
+
+            <!-- Ratings & Reviews View -->
+            <section id="reviews" class="page-view">
+                <header class="page-header">
+                    <h1>⭐ Community Ratings & Reviews</h1>
+                    <p>Read transparent feedback so you know exactly what to expect.</p>
+                </header>
+                <div class="reviews-grid">
+                    <div class="review-card">
+                        <h3>Downtown Plaza <span class="rating">4.8 ⭐</span></h3>
+                        <div class="tags">
+                            <span class="tag">Clean Washrooms</span>
+                            <span class="tag">Fast Wi-Fi</span>
+                        </div>
+                        <p class="quote">"Chargers are extremely fast and the lounge area is spotless." - Sarah T.</p>
+                    </div>
+                    <div class="review-card">
+                        <h3>Highway Stop 42 <span class="rating">4.5 ⭐</span></h3>
+                        <div class="tags">
+                            <span class="tag">Ample Bays</span>
+                            <span class="tag">Food Court</span>
+                        </div>
+                        <p class="quote">"Perfect stop for my long trip, plenty of space to park with a trailer." - John D.</p>
+                    </div>
+                </div>
+                
+                <div class="form-card mt-20">
+                    <h3>Leave a Review</h3>
+                    <form id="review-form">
+                        <div class="form-group">
+                            <label>Station</label>
+                            <select><option>Downtown Plaza</option><option>Highway Stop 42</option></select>
+                        </div>
+                        <div class="form-group">
+                            <label>Rating (1-5)</label>
+                            <input type="number" min="1" max="5" value="5" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Review</label>
+                            <textarea rows="3" required></textarea>
+                        </div>
+                        <button type="submit" class="btn primary-btn">Submit Review</button>
+                    </form>
+                    <div id="review-success" class="alert success hidden">Review submitted!</div>
+                </div>
+            </section>
+
+            <!-- Auto Charge View -->
+            <section id="autocharge" class="page-view">
+                <header class="page-header">
+                    <h1>⚡ Auto Charge & RFID Support</h1>
+                    <p>Link your vehicle for a quick 'Tap, Charge, and Go' experience.</p>
+                </header>
+                <div class="tabs">
+                    <button class="tab-btn active" data-tab="vehicle-tab">🚗 Auto Charge</button>
+                    <button class="tab-btn" data-tab="rfid-tab">💳 Physical RFID Cards</button>
+                </div>
+                
+                <div id="vehicle-tab" class="tab-content active-tab">
+                    <div class="form-card">
+                        <h3>Link Your Vehicle</h3>
+                        <p>Enable charging to begin automatically when you plug in.</p>
+                        <form id="auto-charge-form">
+                            <div class="form-group">
+                                <label>VIN (Vehicle Identification Number)</label>
+                                <input type="text" placeholder="e.g. 1G1RC6E45FU..." required minlength="5">
+                            </div>
+                            <div class="form-group">
+                                <label>Vehicle Make</label>
+                                <select><option>Tesla</option><option>Hyundai</option><option>Ford</option></select>
+                            </div>
+                            <p class="balance">Wallet Balance: <strong>$45.50</strong></p>
+                            <button type="submit" class="btn primary-btn">Enable Auto Charge</button>
+                        </form>
+                        <div id="auto-charge-success" class="alert success hidden">✅ Vehicle Linked! Auto Charge Active.</div>
+                    </div>
+                </div>
+                
+                <div id="rfid-tab" class="tab-content hidden">
+                    <div class="form-card">
+                        <h3>Manage Physical RFID Cards</h3>
+                        <div class="alert info">💳 Active Card ending in 4092 - Linked to Wallet</div>
+                        <form id="rfid-form" class="mt-20">
+                            <div class="form-group">
+                                <label>Link New RFID Card (16-digits)</label>
+                                <input type="text" placeholder="XXXX-XXXX-XXXX-XXXX" required>
+                            </div>
+                            <button type="submit" class="btn outline-btn">Link Card</button>
+                        </form>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Trip Planner View -->
+            <section id="trip" class="page-view">
+                <header class="page-header">
+                    <h1>🗺️ Smart EV Route Planner</h1>
+                    <p>Enter your starting and destination points to discover every charger along your journey.</p>
+                </header>
+                <div class="route-planner-grid">
+                    <!-- Left: Route Input Panel -->
+                    <div class="route-input-panel">
+                        <form id="trip-form">
+                            <!-- Starting Point -->
+                            <div class="route-point-group">
+                                <div class="route-point-icon start-icon">A</div>
+                                <div class="route-point-field">
+                                    <label>Starting Point</label>
+                                    <div class="autocomplete-wrapper">
+                                        <input type="text" id="route-start-input" placeholder="e.g. San Francisco, CA" required autocomplete="off">
+                                        <div class="autocomplete-list" id="start-suggestions"></div>
+                                    </div>
+                                    <button type="button" class="use-location-btn" id="use-my-location-btn">
+                                        <i class="fa-solid fa-crosshairs"></i> Use My Location
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Swap Button -->
+                            <div class="route-swap-row">
+                                <button type="button" class="swap-btn" id="swap-route-btn" title="Swap start and destination">
+                                    <i class="fa-solid fa-arrow-right-arrow-left fa-rotate-90"></i>
+                                </button>
+                            </div>
+
+                            <!-- Destination -->
+                            <div class="route-point-group">
+                                <div class="route-point-icon end-icon">B</div>
+                                <div class="route-point-field">
+                                    <label>Destination</label>
+                                    <div class="autocomplete-wrapper">
+                                        <input type="text" id="route-end-input" placeholder="e.g. Los Angeles, CA" required autocomplete="off">
+                                        <div class="autocomplete-list" id="end-suggestions"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Options -->
+                            <div class="route-options">
+                                <div class="route-option">
+                                    <label><i class="fa-solid fa-battery-three-quarters"></i> Battery Level: <strong id="battery-display">80</strong>%</label>
+                                    <input type="range" min="10" max="100" value="80" id="battery-slider" class="styled-range">
+                                </div>
+                                <div class="route-option">
+                                    <label><i class="fa-solid fa-road"></i> Detour Radius: <strong id="detour-display">5</strong> mi</label>
+                                    <input type="range" min="1" max="20" value="5" id="detour-slider" class="styled-range">
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn primary-btn full-width" id="calculate-route-btn">
+                                <i class="fa-solid fa-route"></i> Calculate Route & Find Chargers
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Right: Route Results Panel -->
+                    <div class="route-results-panel hidden" id="trip-results">
+                        <!-- Stats Bar -->
+                        <div class="route-stats-bar">
+                            <div class="route-stat">
+                                <i class="fa-solid fa-road"></i>
+                                <span id="route-distance">--</span>
+                                <small>Distance</small>
+                            </div>
+                            <div class="route-stat">
+                                <i class="fa-solid fa-clock"></i>
+                                <span id="route-duration">--</span>
+                                <small>Drive Time</small>
+                            </div>
+                            <div class="route-stat">
+                                <i class="fa-solid fa-charging-station"></i>
+                                <span id="route-chargers">--</span>
+                                <small>Chargers</small>
+                            </div>
+                        </div>
+
+                        <h3 style="margin: 20px 0 15px;">Suggested Itinerary</h3>
+                        <div class="route-timeline" id="route-timeline-container">
+                            <!-- Dynamically generated -->
+                        </div>
+
+                        <!-- Charger List Section -->
+                        <div class="charger-list-section">
+                            <div class="charger-list-header">
+                                <h3><i class="fa-solid fa-list"></i> Available Chargers</h3>
+                                <span class="charger-count-badge" id="charger-list-count">0</span>
+                            </div>
+                            <p class="charger-list-subtitle">Sorted by distance from starting point (nearest first)</p>
+                            <div class="charger-list-scroll" id="charger-list-container">
+                                <!-- Dynamically populated -->
+                            </div>
+                        </div>
+
+                        <button type="button" class="btn outline-btn full-width mt-20" id="clear-route-btn">
+                            <i class="fa-solid fa-xmark"></i> Clear Route
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Generate Lead View -->
+            <section id="lead" class="page-view">
+                <header class="page-header">
+                    <h1>📍 Crowdsourced "Generate Lead"</h1>
+                    <p>Propose empty parking lots, cafes, or highway dhabas as viable charging locations.</p>
+                </header>
+                <div class="form-card max-w-800">
+                    <form id="lead-form">
+                        <div class="form-group">
+                            <label>Name of Location / Business</label>
+                            <input type="text" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Full Address</label>
+                            <textarea rows="2" required></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Why is this a great spot?</label>
+                            <textarea rows="3"></textarea>
+                        </div>
+                        <button type="submit" class="btn primary-btn">Submit Lead Request</button>
+                    </form>
+                    <div id="lead-success" class="alert success hidden">🎉 Lead Submitted Successfully!</div>
+                </div>
+            </section>
+
+            <!-- Weather Safety View -->
+            <section id="weather" class="page-view">
+                <header class="page-header">
+                    <h1>⛈️ Weather-Aware Safety</h1>
+                    <p>Check if a station is indoors or sheltered before you arrive during extreme weather.</p>
+                </header>
+                
+                <div class="weather-grid">
+                    <div class="weather-card safe">
+                        <h4>🏢 Downtown Plaza</h4>
+                        <p><strong>Environment:</strong> Indoor Underground Parking</p>
+                        <p><strong>Status:</strong> 🟢 Extremely Safe - Fully sheltered.</p>
+                        <p><strong>Local Weather:</strong> ⛈️ Heavy Rain Warning</p>
+                    </div>
+                    
+                    <div class="weather-card moderate">
+                        <h4>☂️ Highway Stop 42</h4>
+                        <p><strong>Environment:</strong> Canopied / Sheltered</p>
+                        <p><strong>Status:</strong> 🟡 Moderately Safe - Covered from direct rain.</p>
+                        <p><strong>Local Weather:</strong> ☀️ Clear Skies</p>
+                    </div>
+                    
+                    <div class="weather-card dangerous">
+                        <h4>🌲 Tech Park North</h4>
+                        <p><strong>Environment:</strong> Outdoor Uncovered</p>
+                        <p><strong>Status:</strong> 🔴 Warning - Fully exposed to elements.</p>
+                        <p><strong>Local Weather:</strong> ⛈️ Heavy Rain Warning</p>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Leaflet Routing Machine JS -->
+    <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
+    <!-- Leaflet Control Geocoder JS -->
+    <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+    <!-- Turf.js for Spatial Analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
+    <!-- Custom Logic -->
+    <script src="script.js"></script>
+</body>
+</html>
