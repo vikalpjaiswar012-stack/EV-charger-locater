@@ -101,13 +101,13 @@ bash
 
 open index.html
 
-Deploy to Vercel (Recommended)
+Deploy to Netlify (Recommended)
 
 For full API functionality with no CORS issues:
 
 Push this repo to GitHub
 
-Go to vercel.com → Import the repo
+Go to Netlify.com → Import the repo
 
 Set Framework Preset to Other, Output Directory to ./
 
